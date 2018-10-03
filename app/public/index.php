@@ -6,10 +6,10 @@ define('__ROOT__', dirname(__APP__));
 define('__FW__', __ROOT__ . '/fw/');
 
 try {
-    require_once(__FW__. 'Helper.php');
-    require_once(__FW__. 'Response.php');
-    require_once(__FW__ . 'ErrorHandler.php');
-    require_once(__FW__ . 'Request.php');
+
+    foreach (glob(__FW__ . '*.php') as $file) {
+        require_once($file);
+    }
     require_once(__APP__ . '/routes.php');
 
 } catch (Exception $e) {
