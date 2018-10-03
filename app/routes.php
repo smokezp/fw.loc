@@ -1,6 +1,7 @@
 <?php
 
-require_once('../../fw/Route.php');
+require_once(__FW__ . 'Route.php');
+
 use fw\Route;
 
 Route::get('/sddsds', 'SiteController@index');
