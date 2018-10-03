@@ -26,8 +26,8 @@ class ErrorHandler
 
         $filename = date('d-m-Y');
         $file = $logs_dir . $filename;
-        $f = fopen($file, "w");
-        fwrite($f, '[' . date('H-i-s') . '] ' . $this->full_msg);
+        $f = fopen($file, "a+");
+        fwrite($f, '[' . date('H:i:s') . '] ' . $this->full_msg . PHP_EOL);
         fclose($f);
     }
 }
