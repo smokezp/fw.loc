@@ -4,6 +4,8 @@ namespace fw;
 
 class Route
 {
+    protected static $routes = [];
+
     public static function get(string $uri, string $target)
     {
         self::save($uri, $target, 'GET');
@@ -16,20 +18,20 @@ class Route
 
     private static function save(string $uri, string $target, string $method)
     {
-        $GLOBALS['routes'][] = compact('uri', 'target', 'method');
+        static::$routes[] = compact('uri', 'target', 'method');
     }
 
     public static function load()
     {
-        if (!isset($GLOBALS['routes'])) {
-            echo 'routes does not exist';
-            return;
+        if (empty(static::$routes)) {
+             new ErrorHandler(500, 'Routes is missing');
         }
 
         $route = array();
         $exist_route = false;
-        foreach ($GLOBALS['routes'] as $r) {
-            if ($_SERVER['REQUEST_URI'] === $r['uri'] && $_SERVER['REQUEST_METHOD'] === $r['method']) {
+        $request = new Request();
+        foreach (static::$routes as $r) {
+            if ($request->uri === $r['uri'] && $request->method === $r['method']) {
                 $exist_route = true;
                 $route = $r;
                 break;
@@ -37,37 +39,37 @@ class Route
         }
 
         if (!$exist_route) {
-            echo '404';
-            return;
+            new ErrorHandler(404, 'Page not found');
         } else {
 
-            $array = explode('@', $route['target']);
-            $controller = $array[0];
-            $method = $array[1];
-            $file_controller = __ROOT__ . '/Http/Controllers/' . $controller . '.php';
+            @list($controller, $method) = explode('@', $route['target']);
+
+            if (!$controller || !$method) {
+                new ErrorHandler(500, 'Incorrect target "'.$route['target'].'" for current uri');
+            }
+
+            $file_controller = __APP__ . '/Http/Controllers/' . $controller . '.php';
 
             if (!file_exists($file_controller)) {
-                echo 'controller does not exist';
-                return;
+                new ErrorHandler(500, 'Controller ' . $controller . ' does not exist here '. $file_controller);
             }
 
             require_once $file_controller;
 
             if (!class_exists($controller)) {
-                echo 'class does not exist';
-                return;
+                new ErrorHandler(500, 'Class ' . $controller . ' does not exist in file ' . $file_controller);
             }
 
             $obj = new $controller;
 
             if (!method_exists($obj, $method)) {
-                echo 'method does not exist';
-                return;
-            }
-            $view = call_user_func(array($obj, $method));
+                new ErrorHandler(500, 'Method ' . $method . ' does not exist in class ' . $controller .
+                    ' in file ' . $file_controller);
 
-            $file_view = __ROOT__ . '/public/views/' . $view . '.html';
-            echo file_get_contents($file_view);
+            }
+
+            $response = call_user_func(array($obj, $method), $request);
+            $response->send();
         }
 
     }
