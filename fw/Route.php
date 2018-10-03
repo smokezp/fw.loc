@@ -24,7 +24,7 @@ class Route
     public static function load()
     {
         if (empty(static::$routes)) {
-             new ErrorHandler(500, 'Routes is missing');
+            new ErrorHandler(500, 'Routes is missing');
         }
 
         $route = array();
@@ -45,13 +45,13 @@ class Route
             @list($controller, $method) = explode('@', $route['target']);
 
             if (!$controller || !$method) {
-                new ErrorHandler(500, 'Incorrect target "'.$route['target'].'" for current uri');
+                new ErrorHandler(500, 'Incorrect target "' . $route['target'] . '" for current uri');
             }
 
             $file_controller = __APP__ . '/Http/Controllers/' . $controller . '.php';
 
             if (!file_exists($file_controller)) {
-                new ErrorHandler(500, 'Controller ' . $controller . ' does not exist here '. $file_controller);
+                new ErrorHandler(500, 'Controller ' . $controller . ' does not exist here ' . $file_controller);
             }
 
             require_once $file_controller;
@@ -69,6 +69,12 @@ class Route
             }
 
             $response = call_user_func(array($obj, $method), $request);
+            if (!$response instanceof Response) {
+                new ErrorHandler(500, 'Method ' . $method . ' must return instance of ' . Response::class .
+                    ' in file ' . $file_controller);
+
+            }
+
             $response->send();
         }
 
