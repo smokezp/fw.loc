@@ -6,6 +6,7 @@ class Route
 {
     protected static $routes = [];
 
+
     public static function get(string $uri, string $target)
     {
         self::save($uri, $target, 'GET');
@@ -31,10 +32,36 @@ class Route
         $exist_route = false;
         $request = new Request();
         foreach (static::$routes as $r) {
-            if ($request->uri === $r['uri'] && $request->method === $r['method']) {
-                $exist_route = true;
-                $route = $r;
-                break;
+            if (preg_match('/\/{(\w+)}/', $r['uri'])) {
+                $route_parts = explode('/', $r['uri']);
+                $request_parts = explode('/', $request->uri);
+
+                if (count($route_parts) == count($request_parts)) {
+                    $correct_parts = true;
+                    foreach ($route_parts as $key => $value) {
+                        preg_match('/{(\w+)}/', $value, $match);
+                        if (empty($match)) {
+                            if ($request_parts[$key] == $value) {
+                                $correct_parts = true;
+                            } else {
+                                $correct_parts = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($correct_parts) {
+                        $exist_route = true;
+                        $route = $r;
+                        break;
+                    }
+                }
+            } else {
+                if ($request->uri === $r['uri'] && $request->method === $r['method']) {
+                    $exist_route = true;
+                    $route = $r;
+                    break;
+                }
             }
         }
 

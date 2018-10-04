@@ -15,7 +15,14 @@ class SiteController
     public function index2(Request $request)
     {
         $response = new Response();
-        $response->redirect('sddsds');
+        $response->redirect('/sddssdsd/sassas');
+        return $response;
+    }
+
+    public function index3(Request $request)
+    {
+        $response = new Response();
+        $response->redirect('/sddssdsd/sassas');
         return $response;
     }
 }
