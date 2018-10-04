@@ -6,10 +6,16 @@ class Route
 {
     protected static $routes = [];
 
+    public $name;
+
+    public function name(string $name) {
+        $this->name = $name;
+    }
 
     public static function get(string $uri, string $target)
     {
         self::save($uri, $target, 'GET');
+
     }
 
     public static function post(string $uri, string $target)
@@ -38,6 +44,7 @@ class Route
 
                 if (count($route_parts) == count($request_parts)) {
                     $correct_parts = true;
+                    $dynamic_parts = [];
                     foreach ($route_parts as $key => $value) {
                         preg_match('/{(\w+)}/', $value, $match);
                         if (empty($match)) {
@@ -47,14 +54,20 @@ class Route
                                 $correct_parts = false;
                                 break;
                             }
+                        } else {
+                            $dynamic_parts[$match[1]] = $request_parts[$key];
                         }
                     }
 
                     if ($correct_parts) {
                         $exist_route = true;
                         $route = $r;
+                        $request->dynamic_parts = $dynamic_parts;
+                        unset($dynamic_parts);
                         break;
                     }
+
+                    unset($dynamic_parts);
                 }
             } else {
                 if ($request->uri === $r['uri'] && $request->method === $r['method']) {

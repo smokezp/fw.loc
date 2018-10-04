@@ -8,6 +8,7 @@ class Request
     public $method;
     public $uri;
     public $params = [];
+    public $dynamic_parts = [];
 
     function __construct()
     {
