@@ -1,28 +1,22 @@
 <?php
 
 use fw\Request;
-use fw\Response;
+
 
 class SiteController
 {
     public function index(Request $request)
     {
-        $response = new Response();
-        $response->view('index');
-        return $response;
+        response()->view('index')->send();
     }
 
     public function index2(Request $request)
     {
-        $response = new Response();
-        $response->redirect('/sddssdsd/sassas');
-        return $response;
+        response()->redirectUrl('/sddssdsd/sassas')->send();
     }
 
     public function index3(Request $request)
     {
-        $response = new Response();
-        $response->redirect('/sddssdsd/sassas');
-        return $response;
+        response()->redirectRoute('dddd', ['sdsdsdsd' => 'ddd1'], ['sdddd' => 'sdd22'])->send();
     }
 }

@@ -5,26 +5,77 @@ namespace fw;
 class Route
 {
     protected static $routes = [];
+    private static $pattern = '/{(\w+)}/';
 
-    public $name;
 
-    public function name(string $name) {
-        $this->name = $name;
+    public function name(string $name)
+    {
+        static::$routes[count(static::$routes) - 1]['name'] = $name;
+        return $this;
     }
 
     public static function get(string $uri, string $target)
     {
         self::save($uri, $target, 'GET');
+        return new self();
+    }
 
+    public static function getUriByRoute($route)
+    {
+        $found_route = [];
+
+        foreach (static::$routes as $r) {
+            if (isset($r['name']) && $r['name'] === $route['name']) {
+                $found_route = $r;
+                break;
+            }
+        }
+
+        if (empty($found_route)) {
+            new ErrorHandler(500, 'The ' . $route . ' does not exist');
+
+        }
+
+        if (preg_match_all(static::$pattern, $found_route['uri'], $matches)) {
+            if (empty($route['dynamic_parts'])) {
+                new ErrorHandler(500, 'You must set dynamic parts of your route');
+            }
+
+            if (count($route['dynamic_parts']) != count($matches[0])) {
+                new ErrorHandler(500, 'Count of your dynamic parts should be the same as in route');
+            }
+
+            $uri = $found_route['uri'];
+            foreach ($route['dynamic_parts'] as $dynamic_part => $value) {
+                if (!strpos($uri, '{' . $dynamic_part . '}') || !$dynamic_part || !$value) {
+                    new ErrorHandler(500, 'Your dynamic parts of route is incorrect');
+                }
+                $uri = str_replace("{" . $dynamic_part . "}", $value, $uri);
+            }
+
+        } else {
+            $uri = $found_route['uri'];
+        }
+
+        if (!empty($route['params'])) {
+            $uri .= '?' . http_build_query($route['params']);
+        }
+
+        return $uri;
     }
 
     public static function post(string $uri, string $target)
     {
         self::save($uri, $target, 'POST');
+        return new self();
     }
 
     private static function save(string $uri, string $target, string $method)
     {
+        if (substr($uri, 0, 1) !== '/') {
+            new ErrorHandler(500, 'Route ' . $uri . $target . ' must start by symbol "/"');
+        }
+
         static::$routes[] = compact('uri', 'target', 'method');
     }
 
@@ -38,7 +89,7 @@ class Route
         $exist_route = false;
         $request = new Request();
         foreach (static::$routes as $r) {
-            if (preg_match('/\/{(\w+)}/', $r['uri'])) {
+            if (preg_match(static::$pattern, $r['uri'])) {
                 $route_parts = explode('/', $r['uri']);
                 $request_parts = explode('/', $request->uri);
 
@@ -46,7 +97,7 @@ class Route
                     $correct_parts = true;
                     $dynamic_parts = [];
                     foreach ($route_parts as $key => $value) {
-                        preg_match('/{(\w+)}/', $value, $match);
+                        preg_match(static::$pattern, $value, $match);
                         if (empty($match)) {
                             if ($request_parts[$key] == $value) {
                                 $correct_parts = true;
@@ -108,14 +159,8 @@ class Route
 
             }
 
-            $response = call_user_func(array($obj, $method), $request);
-            if (!$response instanceof Response) {
-                new ErrorHandler(500, 'Method ' . $method . ' must return instance of ' . Response::class .
-                    ' in file ' . $file_controller);
+            call_user_func(array($obj, $method), $request);
 
-            }
-
-            $response->send();
         }
 
     }
